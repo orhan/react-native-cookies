@@ -17,13 +17,19 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import android.util.Log;
+import android.webkit.CookieSyncManager;
+import android.webkit.CookieManager;
+import android.os.Build;
 
 public class CookieManagerModule extends ReactContextBaseJavaModule {
 
     private ForwardingCookieHandler cookieHandler;
+    private ReactApplicationContext context;
 
     public CookieManagerModule(ReactApplicationContext context) {
         super(context);
+        this.context = context;
         this.cookieHandler = new ForwardingCookieHandler(context);
     }
 
@@ -33,13 +39,44 @@ public class CookieManagerModule extends ReactContextBaseJavaModule {
 
     @ReactMethod
     public void set(ReadableMap cookie, final Callback callback) throws Exception {
-        throw new Exception("Cannot call on android, try setFromResponse");
+        String cookieString = "";
+
+        if (cookie.getString("name") != null && cookie.getString("value") != null) {
+            cookieString += cookie.getString("name") + "=" + cookie.getString("value");
+        }
+
+        if (cookie.getString("domain") != null) {
+            cookieString += "; domain=" + cookie.getString("domain");
+        }
+
+        if (cookie.getString("path") != null) {
+            cookieString += "; path=" + cookie.getString("path");
+        }
+
+        if (cookie.getString("expiration") != null) {
+            cookieString += "; expires=Fri, 31 Mar 2017 00:00:00 -0000;";
+        }
+
+        CookieSyncManager.createInstance(context);
+        CookieManager cookieManager = CookieManager.getInstance();
+        cookieManager.removeSessionCookie();
+
+        cookieManager.setCookie(cookie.getString("url"), cookieString);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            cookieManager.flush();
+        } else {
+            CookieSyncManager.getInstance().sync();
+        }
+
+        callback.invoke(null, null);
     }
 
     @ReactMethod
     public void setFromResponse(String url, String value, final Callback callback) throws URISyntaxException, IOException {
         Map headers = new HashMap<String, List<String>>();
         // Pretend this is a header
+
         headers.put("Set-cookie", Collections.singletonList(value));
         URI uri = new URI(url);
         this.cookieHandler.put(uri, headers);
