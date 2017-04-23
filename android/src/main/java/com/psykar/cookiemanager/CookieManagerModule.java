@@ -54,7 +54,7 @@ public class CookieManagerModule extends ReactContextBaseJavaModule {
         }
 
         if (cookie.getString("expiration") != null) {
-            cookieString += "; expires=Fri, 31 Mar 2017 00:00:00 -0000;";
+            cookieString += "; expires=Fri, 31 Mar 2035 00:00:00 -0000;";
         }
 
         CookieSyncManager.createInstance(context);
